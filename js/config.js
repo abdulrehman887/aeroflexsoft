@@ -1,0 +1,10 @@
+window.AEROFLEX_CONFIG = {
+  SUPABASE_URL: "https://nthumfyucttyaanunjvj.supabase.co",
+  SUPABASE_PUBLISHABLE_KEY: "sb_publishable_raSEeYh_0e6qxzABbKKzQQ_9gkIu9ny",
+  WHATSAPP_NUMBER: "03172041702",
+  SOCIALS: {
+    instagram: "",
+    tiktok: "",
+    facebook: ""
+  }
+};

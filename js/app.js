@@ -1,0 +1,46 @@
+(function(){
+const demo = [
+ {id:"af01",name:"AEROFLEX 01",price:2500,category:"AEROFLEX",size:"Standard",condition:"10/10",description:"Premium AEROFLEX article.",image:"assets/aeroflex-logo.png",
+  variants:[{name:"BLACK",stock:2,image:"assets/aeroflex-logo.png"},{name:"BROWN",stock:3,image:"assets/aeroflex-logo.png"},{name:"NAVY",stock:1,image:"assets/aeroflex-logo.png"},{name:"TAN",stock:0,image:"assets/aeroflex-logo.png"}]},
+ {id:"ll01",name:"LOOK LASTER 01",price:2800,category:"LOOK LASTER",size:"Standard",condition:"10/10",description:"Premium LOOK LASTER article.",image:"assets/aeroflex-logo.png",
+  variants:[{name:"BLACK",stock:4,image:"assets/aeroflex-logo.png"},{name:"BROWN",stock:2,image:"assets/aeroflex-logo.png"}]},
+ {id:"ls01",name:"LS 01",price:2200,category:"LS",size:"Standard",condition:"10/10",description:"Premium LS article.",image:"assets/aeroflex-logo.png",
+  variants:[{name:"BLACK",stock:0,image:"assets/aeroflex-logo.png"},{name:"GREY",stock:1,image:"assets/aeroflex-logo.png"}]},
+ {id:"cam01",name:"CAMLO 01",price:2600,category:"CAMLO",size:"Standard",condition:"10/10",description:"Premium CAMLO article.",image:"assets/aeroflex-logo.png",
+  variants:[{name:"BLACK",stock:0,image:"assets/aeroflex-logo.png"}]}
+];
+function getProducts(){try{const x=localStorage.getItem("aeroflex_products"); return x?JSON.parse(x):demo;}catch(e){return demo;}}
+function waLink(p,v,request=false){
+ const n=(window.AEROFLEX_CONFIG.WHATSAPP_NUMBER||"").replace(/\D/g,"");
+ const text=`ASALAMUALAIKUM AEROFLEX,\n\nI want to ${request?"request":"order"}:\n\nProduct: ${p.name}\n\nColour: ${v?.name||"Not selected"}\n\nPrice: Rs. ${Number(p.price||0).toLocaleString()}\n\nSize: ${p.size||"Standard"}\n\nCondition: ${p.condition||"10/10"}\n\nName:\n\nPhone:\n\nAddress:\n\nJazakAllah Khair.`;
+ return n?`https://wa.me/${n}?text=${encodeURIComponent(text)}`:"#";
+}
+function productCard(p,mode){
+ const avail=p.variants.filter(v=>Number(v.stock)>0), visible=mode==="available"?avail:p.variants;
+ if(mode==="available"&&!avail.length)return "";
+ const first=visible[0]||p.variants[0];
+ const status=avail.length?"AVAILABLE STOCK":"OUT OF STOCK";
+ return `<article class="product-card"><a href="product.html?id=${encodeURIComponent(p.id)}"><div class="product-img"><img src="${first?.image||p.image}" alt="${p.name}">${!avail.length?'<span class="badge">OUT OF STOCK</span>':''}</div><div class="product-info"><h3>${p.name}</h3><span>${p.category}</span><strong>Rs. ${Number(p.price||0).toLocaleString()}</strong><small>${visible.map(v=>`${v.name} — ${v.stock} CTN`).join(" • ")||status}</small></div></a></article>`;
+}
+function renderShop({mode}){
+ const grid=document.getElementById("productGrid"), search=document.getElementById("search"), category=document.getElementById("category"), sort=document.getElementById("sort");
+ const params=new URLSearchParams(location.search); if(params.get("category"))category.value=params.get("category");
+ function go(){let ps=getProducts();const q=(search.value||"").toLowerCase();ps=ps.filter(p=>(!q||p.name.toLowerCase().includes(q))&&(!category.value||p.category===category.value));ps.sort((a,b)=>sort.value==="za"?b.name.localeCompare(a.name):sort.value==="low"?a.price-b.price:sort.value==="high"?b.price-a.price:a.name.localeCompare(b.name));grid.innerHTML=ps.map(p=>productCard(p,mode)).join("")||'<div class="empty">No articles found.</div>';}
+ [search,category,sort].forEach(x=>x.addEventListener("input",go));go();
+}
+function renderProduct(){
+ const id=new URLSearchParams(location.search).get("id"), p=getProducts().find(x=>x.id===id), el=document.getElementById("productDetail");
+ if(!p){el.innerHTML="<h1>Product not found</h1>";return;}
+ let selected=p.variants.find(v=>v.stock>0)||p.variants[0];
+ const draw=()=>{const available=p.variants.filter(v=>v.stock>0);el.innerHTML=`<div class="detail-media"><img id="mainProductImage" src="${selected.image||p.image}" alt="${p.name}"></div><div class="detail-copy"><span class="eyebrow">${p.category}</span><h1>${p.name}</h1><h2>Rs. ${Number(p.price).toLocaleString()}</h2><p>${p.description||""}</p><div class="meta"><span>Size: ${p.size}</span><span>Condition: ${p.condition}</span></div><h3>COLOUR</h3><div class="variants">${p.variants.map((v,i)=>`<button class="variant ${v.name===selected.name?"selected":""} ${v.stock<=0?"disabled":""}" data-i="${i}">${v.name}<small>${v.stock>0?v.stock+" CTN":"OUT OF STOCK"}</small></button>`).join("")}</div><a class="btn gold order-btn ${selected.stock<=0?"request":""}" id="orderBtn" href="${waLink(p,selected,selected.stock<=0)}" target="_blank">${selected.stock>0?"ORDER ON WHATSAPP":"ORDER ON REQUEST"}</a></div>`;
+ el.querySelectorAll(".variant").forEach(b=>b.onclick=()=>{const v=p.variants[Number(b.dataset.i)];selected=v;draw();});};
+ draw();
+}
+function setup(){
+ document.querySelectorAll("#headerWa,#heroWa,#ctaWa").forEach(a=>a.href=waLink({name:"AEROFLEX"},null,true));
+ const f=document.getElementById("featuredGrid"); if(f)f.innerHTML=getProducts().slice(0,4).map(p=>productCard(p,"all")).join("");
+ document.querySelectorAll("#year").forEach(x=>x.textContent=new Date().getFullYear());
+}
+window.AEROFLEX={getProducts,renderShop,renderProduct,waLink};
+document.addEventListener("DOMContentLoaded",setup);
+})();
