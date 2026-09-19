@@ -1,41 +1,53 @@
 (function(){
-const PRODUCTS_KEY="aeroflex_products";
-const STOCK_KEY="aeroflex_stock";
-function products(){try{const x=localStorage.getItem(PRODUCTS_KEY);return x?JSON.parse(x):window.AEROFLEX?.getProducts?.()||[];}catch(e){return [];}}
-function saveProducts(ps){localStorage.setItem(PRODUCTS_KEY,JSON.stringify(ps));}
-function stockMap(){try{return JSON.parse(localStorage.getItem(STOCK_KEY)||"{}");}catch(e){return {};}}
-function saveStock(s){localStorage.setItem(STOCK_KEY,JSON.stringify(s));}
-function key(pid,color){return pid+"::"+String(color||"").trim().toUpperCase();}
-function stockFor(pid,color){return Math.max(0,Number(stockMap()[key(pid,color)]||0));}
-function setStock(pid,color,qty){const s=stockMap();s[key(pid,color)]=Math.max(0,Math.floor(Number(qty)||0));saveStock(s);}
-function addStock(pid,color,qty){setStock(pid,color,stockFor(pid,color)+Math.max(0,Math.floor(Number(qty)||0)));}
-function migrateLegacyStock(ps){const s=stockMap();let changed=false;ps.forEach(p=>(p.variants||[]).forEach(v=>{const k=key(p.id,v.name);if(s[k]===undefined&&Number(v.stock)>0){s[k]=Number(v.stock);changed=true;}}));if(changed)saveStock(s);}
-let ps=products(),editId=null;
+const KEY="aeroflex_products";
+const demo=window.AEROFLEX_DEMO || null;
+function products(){try{let x=localStorage.getItem(KEY);return x?JSON.parse(x):window.AEROFLEX?.getProducts?.()||[];}catch(e){return [];}}
+function save(ps){localStorage.setItem(KEY,JSON.stringify(ps));}
+let ps=products(), editId=null;
 const $=id=>document.getElementById(id);
 function refresh(){
- ps=products();migrateLegacyStock(ps);ps=products();
- const total=ps.reduce((n,p)=>n+(p.variants||[]).reduce((a,v)=>a+stockFor(p.id,v.name),0),0);
- const available=ps.filter(p=>(p.variants||[]).some(v=>stockFor(p.id,v.name)>0)).length;
- $("totalArticles").textContent=ps.length;$("availableArticles").textContent=available;$("outArticles").textContent=Math.max(0,ps.length-available);$("totalCtn").textContent=total;
- $("adminRows").innerHTML=ps.map(p=>`<tr><td><img class="thumb" src="${p.image||'assets/aeroflex-logo.png'}" alt=""></td><td><b>${esc(p.name)}</b><br><small>${(p.variants||[]).map(v=>esc(v.name)).join(' • ')}</small></td><td>${esc(p.category||'')}</td><td>Rs. ${Number(p.price||0).toLocaleString()}</td><td>${(p.variants||[]).map(v=>{const q=stockFor(p.id,v.name);return `<span class="stock-pill">${esc(v.name)} — ${q} CTN</span>`}).join(' ')}</td><td class="actions"><button onclick="AEROFLEX_ADMIN.edit('${p.id}')">EDIT</button> <button class="stock-btn" onclick="AEROFLEX_ADMIN.stock('${p.id}')">ITEM TRANSFER</button> <button class="danger" onclick="AEROFLEX_ADMIN.del('${p.id}')">DELETE</button></td></tr>`).join('')||'<tr><td colspan="6">No articles yet.</td></tr>';
- renderTransferOptions();
+ ps=products(); $("totalArticles").textContent=ps.length;
+ $("availableArticles").textContent=ps.filter(p=>p.variants.some(v=>+v.stock>0)).length;
+ $("outArticles").textContent=ps.filter(p=>!p.variants.some(v=>+v.stock>0)).length;
+ $("totalCtn").textContent=ps.reduce((s,p)=>s+p.variants.reduce((a,v)=>a+Math.max(0,+v.stock||0),0),0);
+ $("adminRows").innerHTML=ps.map(p=>`<tr><td><img class="thumb" src="${p.image}" alt=""></td><td><b>${p.name}</b></td><td>${p.category}</td><td>Rs. ${Number(p.price).toLocaleString()}</td><td>${p.variants.map(v=>`${v.name} — ${v.stock} CTN`).join("<br>")}</td><td><button onclick="AEROFLEX_ADMIN.edit('${p.id}')">EDIT</button> <button class="danger" onclick="AEROFLEX_ADMIN.del('${p.id}')">DELETE</button></td></tr>`).join("");
 }
-function esc(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
-function variantRow(v={name:"",image:""}){return `<div class="variant-row"><input class="v-name" placeholder="Colour name e.g. BLACK" value="${esc(v.name||'')}" required><input class="v-file" type="file" accept="image/*"><input type="hidden" class="v-image" value="${esc(v.image||'')}"><button type="button" class="remove-v">×</button></div>`;}
-function openForm(p){editId=p?.id||null;$("formTitle").textContent=p?"Edit Article":"Add Article";$("name").value=p?.name||"";$("price").value=p?.price||"";$("cat").value=p?.category||"AEROFLEX";$("size").value=p?.size||"Standard";$("condition").value=p?.condition||"10/10";$("description").value=p?.description||"";$("mainImage").value="";$("variantList").innerHTML=(p?.variants||[{name:"",image:""}]).map(variantRow).join('');bindVariantRemove();$("productModal").hidden=false;}
-function bindVariantRemove(){document.querySelectorAll('.remove-v').forEach(b=>b.onclick=()=>b.parentElement.remove());}
-function readFile(file){return new Promise(r=>{if(!file)return r(null);const fr=new FileReader();fr.onload=()=>r(fr.result);fr.onerror=()=>r(null);fr.readAsDataURL(file);});}
-async function submit(e){e.preventDefault();const old=ps.find(x=>x.id===editId),main=await readFile($("mainImage").files[0]);const rows=[...document.querySelectorAll('.variant-row')];if(!rows.length){alert('Add at least one colour.');return;}const vars=[];for(const row of rows){const name=row.querySelector('.v-name').value.trim().toUpperCase();if(!name){alert('Every colour needs a name.');return;}const file=row.querySelector('.v-file').files[0];const image=await readFile(file);vars.push({name,image:image||row.querySelector('.v-image').value||main||old?.image||'assets/aeroflex-logo.png'});}
- const oldNames=new Set((old?.variants||[]).map(v=>v.name.toUpperCase()));const p={id:editId||('p_'+Date.now()),name:$("name").value.trim(),price:Number($("price").value||0),category:$("cat").value,size:$("size").value.trim(),condition:$("condition").value.trim(),description:$("description").value.trim(),image:main||old?.image||vars[0].image,variants:vars};
- saveProducts(editId?ps.map(x=>x.id===editId?p:x):[...ps,p]);
- if(!editId){vars.forEach(v=>setStock(p.id,v.name,0));} else {const s=stockMap();Object.keys(s).forEach(k=>{if(k.startsWith(p.id+'::')&&!vars.some(v=>k===key(p.id,v.name)))delete s[k];});saveStock(s);}
- $("productModal").hidden=true;refresh();}
-function renderTransferOptions(){const a=$("transferArticle"),c=$("transferColour");if(!a)return;a.innerHTML='<option value="">Select article</option>'+ps.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');c.innerHTML='<option value="">Select colour</option>';a.onchange=()=>{const p=ps.find(x=>x.id===a.value);c.innerHTML='<option value="">Select colour</option>'+(p?.variants||[]).map(v=>`<option value="${esc(v.name)}">${esc(v.name)}</option>`).join('');};}
-function openStock(id){$("transferArticle").value=id;$("transferArticle").dispatchEvent(new Event('change'));$("transferQty").focus();window.scrollTo({top:document.querySelector('.transfer-panel').offsetTop-20,behavior:'smooth'});}
-function transfer(){const pid=$("transferArticle").value,color=$("transferColour").value,qty=Math.floor(Number($("transferQty").value)||0);if(!pid||!color||qty<=0){alert('Select article, colour and enter CTN greater than 0.');return;}addStock(pid,color,qty);const total=stockFor(pid,color);$("transferMsg").textContent=`Transferred ${qty} CTN. Total ${color}: ${total} CTN.`;$("transferQty").value='';refresh();}
-function stockChange(){const pid=$("transferArticle").value,color=$("transferColour").value;$("currentStock").textContent=pid&&color?`Current stock: ${stockFor(pid,color)} CTN`:'Current stock: select a colour';}
-function printStock(){ps=products();const rows=ps.map(p=>({p,av:(p.variants||[]).map(v=>({...v,stock:stockFor(p.id,v.name)})).filter(v=>v.stock>0)})).filter(x=>x.av.length);$("printDate").textContent=new Date().toLocaleString();$("printContent").innerHTML=rows.map(x=>`<div class="print-product"><img src="${x.p.image||'assets/aeroflex-logo.png'}" alt=""><div><h2>${esc(x.p.name)}</h2><p class="print-price">Rs. ${Number(x.p.price||0).toLocaleString()}</p>${x.av.map(v=>`<div class="print-colour"><b>${esc(v.name)}</b><span>${v.stock} CTN</span></div>`).join('')}</div></div>`).join('')||'<p>No available stock.</p>';$('printArea').hidden=false;window.print();setTimeout(()=>$('printArea').hidden=true,500);}
-function login(){const email=$("adminEmail").value.trim(),pass=$("adminPassword").value;if(!email||!pass){$("loginMsg").textContent='Enter admin email and password.';return;}$("loginBox").hidden=true;$("dashboard").hidden=false;refresh();}
-window.AEROFLEX_ADMIN={edit:id=>openForm(ps.find(p=>p.id===id)),del:id=>{if(confirm('Delete this article?')){saveProducts(ps.filter(p=>p.id!==id));const s=stockMap();Object.keys(s).filter(k=>k.startsWith(id+'::')).forEach(k=>delete s[k]);saveStock(s);refresh();}},stock:openStock};
-document.addEventListener('DOMContentLoaded',()=>{$('loginBtn').onclick=login;$('addBtn').onclick=()=>openForm();$('closeModal').onclick=()=>$('productModal').hidden=true;$('cancelForm').onclick=()=>$('productModal').hidden=true;$('addVariant').onclick=()=>{if(document.querySelectorAll('.variant-row').length<10){$('variantList').insertAdjacentHTML('beforeend',variantRow());bindVariantRemove();}else alert('Maximum 10 colours per article.');};$('productForm').onsubmit=submit;$('printBtn').onclick=printStock;$('pdfBtn').onclick=printStock;$('transferArticle').onchange=()=>{const p=ps.find(x=>x.id===$('transferArticle').value);$('transferColour').innerHTML='<option value="">Select colour</option>'+(p?.variants||[]).map(v=>`<option value="${esc(v.name)}">${esc(v.name)}</option>`).join('');stockChange();};$('transferColour').onchange=stockChange;$('transferForm').onsubmit=e=>{e.preventDefault();transfer();};});
+function variantRow(v={name:"",stock:0,image:""}){
+ const id="v_"+Math.random().toString(36).slice(2);
+ return `<div class="variant-row" data-vid="${id}"><input class="v-name" placeholder="Colour name e.g. BLACK" value="${v.name||""}" required><input class="v-stock" type="number" min="0" step="1" placeholder="CTN" value="${v.stock??0}" required><input class="v-file" type="file" accept="image/*"><input type="hidden" class="v-image" value="${v.image||""}"><button type="button" class="remove-v">×</button></div>`;
+}
+function openForm(p){
+ editId=p?.id||null;$("formTitle").textContent=p?"Edit Article":"Add Article";$("productId").value=editId||"";
+ $("name").value=p?.name||"";$("price").value=p?.price||"";$("cat").value=p?.category||"AEROFLEX";$("size").value=p?.size||"Standard";$("condition").value=p?.condition||"10/10";$("description").value=p?.description||"";$("mainImage").value="";
+ $("variantList").innerHTML=(p?.variants||[{name:"",stock:0,image:""}]).map(variantRow).join(""); bindVariantRemove();$("productModal").hidden=false;
+}
+function bindVariantRemove(){document.querySelectorAll(".remove-v").forEach(b=>b.onclick=()=>b.parentElement.remove());}
+function readFile(file){return new Promise(r=>{if(!file)return r(null);const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(file);});}
+async function submit(e){
+ e.preventDefault();
+ const old=ps.find(x=>x.id===editId), main=await readFile($("mainImage").files[0]);
+ const rows=[...document.querySelectorAll(".variant-row")]; if(!rows.length){alert("Add at least one colour.");return;}
+ const vars=[];for(const row of rows){const name=row.querySelector(".v-name").value.trim().toUpperCase();const stock=Math.max(0,parseInt(row.querySelector(".v-stock").value||0,10));const file=row.querySelector(".v-file").files[0];const image=await readFile(file);if(!name){alert("Every colour needs a name.");return;}vars.push({name,stock,image:image||row.querySelector(".v-image").value||main||old?.image||"assets/aeroflex-logo.png"});}
+ const p={id:editId||("p_"+Date.now()),name:$("name").value.trim(),price:Number($("price").value||0),category:$("cat").value,size:$("size").value.trim(),condition:$("condition").value.trim(),description:$("description").value.trim(),image:main||old?.image||vars[0].image,variants:vars};
+ ps=editId?ps.map(x=>x.id===editId?p:x):[...ps,p];save(ps);$("productModal").hidden=true;refresh();
+}
+function printStock(){
+ const rows=ps.filter(p=>p.variants.some(v=>+v.stock>0));
+ $("printDate").textContent=new Date().toLocaleString();
+ $("printContent").innerHTML=rows.map(p=>{const av=p.variants.filter(v=>+v.stock>0);return `<div class="print-product"><img src="${p.image}" alt=""><div><h2>${p.name}</h2><p class="print-price">Rs. ${Number(p.price).toLocaleString()}</p>${av.map(v=>`<div class="print-colour"><b>${v.name}</b><span>${v.stock} CTN</span></div>`).join("")}</div></div>`}).join("")||"<p>No available stock.</p>";
+ $("printArea").hidden=false;window.print();setTimeout(()=>{$("printArea").hidden=true;},500);
+}
+async function pdf(){
+ // Opens the same clean stock sheet in the browser print dialog, where "Save as PDF" produces a PDF.
+ printStock();
+}
+function login(){
+ const email=$("adminEmail").value.trim(), pass=$("adminPassword").value;
+ if(!email||!pass){$("loginMsg").textContent="Enter admin email and password.";return;}
+ $("loginBox").hidden=true;$("dashboard").hidden=false;refresh();
+}
+window.AEROFLEX_ADMIN={edit:id=>openForm(ps.find(p=>p.id===id)),del:id=>{if(confirm("Delete this article?")){save(ps.filter(p=>p.id!==id));refresh();}}};
+document.addEventListener("DOMContentLoaded",()=>{
+ $("loginBtn").onclick=login;$("addBtn").onclick=()=>openForm();$("closeModal").onclick=()=>$("productModal").hidden=true;$("cancelForm").onclick=()=>$("productModal").hidden=true;$("addVariant").onclick=()=>{if(document.querySelectorAll(".variant-row").length<10){$("variantList").insertAdjacentHTML("beforeend",variantRow());bindVariantRemove();}else alert("Maximum 10 colours per article.");};$("productForm").onsubmit=submit;$("printBtn").onclick=printStock;$("pdfBtn").onclick=pdf;
+});
 })();
