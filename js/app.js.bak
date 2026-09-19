@@ -10,16 +10,13 @@ const demo = [
   variants:[{name:"BLACK",stock:0,image:"assets/aeroflex-logo.png"}]}
 ];
 function getProducts(){try{const x=localStorage.getItem("aeroflex_products"); return x?JSON.parse(x):demo;}catch(e){return demo;}}
-function stockMap(){try{return JSON.parse(localStorage.getItem("aeroflex_stock")||"{}");}catch(e){return {};}}
-function stockFor(p,v){return Number(stockMap()[p.id+"::"+String(v?.name||"").trim().toUpperCase()]||0);}
-function availableVariants(p){return (p.variants||[]).filter(v=>stockFor(p,v)>0);}
 function waLink(p,v,request=false){
  const n=(window.AEROFLEX_CONFIG.WHATSAPP_NUMBER||"").replace(/\D/g,"");
  const text=`ASALAMUALAIKUM AEROFLEX,\n\nI want to ${request?"request":"order"}:\n\nProduct: ${p.name}\n\nColour: ${v?.name||"Not selected"}\n\nPrice: Rs. ${Number(p.price||0).toLocaleString()}\n\nSize: ${p.size||"Standard"}\n\nCondition: ${p.condition||"10/10"}\n\nName:\n\nPhone:\n\nAddress:\n\nJazakAllah Khair.`;
  return n?`https://wa.me/${n}?text=${encodeURIComponent(text)}`:"#";
 }
 function productCard(p,mode){
- const avail=availableVariants(p), visible=mode==="available"?avail:p.variants;
+ const avail=p.variants.filter(v=>Number(v.stock)>0), visible=mode==="available"?avail:p.variants;
  if(mode==="available"&&!avail.length)return "";
  const first=visible[0]||p.variants[0];
  const status=avail.length?"AVAILABLE STOCK":"OUT OF STOCK";
@@ -35,8 +32,8 @@ function renderShop({mode}){
 function renderProduct(){
  const id=new URLSearchParams(location.search).get("id"), p=getProducts().find(x=>x.id===id), el=document.getElementById("productDetail");
  if(!p){el.innerHTML="<h1>Product not found</h1>";return;}
- let selected=availableVariants(p)[0]||p.variants[0];
- const draw=()=>{const available=availableVariants(p);el.innerHTML=`<div class="detail-media"><img id="mainProductImage" src="${selected.image||p.image}" alt="${p.name}"></div><div class="detail-copy"><span class="eyebrow">${p.category}</span><h1>${p.name}</h1><h2>Rs. ${Number(p.price).toLocaleString()}</h2><p>${p.description||""}</p><div class="meta"><span>Size: ${p.size}</span><span>Condition: ${p.condition}</span></div><h3>COLOUR</h3><div class="variants">${p.variants.map((v,i)=>`<button class="variant ${v.name===selected.name?"selected":""} ${stockFor(p,v)<=0?"disabled":""}" data-i="${i}">${v.name}<small>${stockFor(p,v)>0?stockFor(p,v)+" CTN":"OUT OF STOCK"}</small></button>`).join("")}</div><a class="btn gold order-btn ${stockFor(p,selected)<=0?"request":""}" id="orderBtn" href="${waLink(p,selected,stockFor(p,selected)<=0)}" target="_blank">${stockFor(p,selected)>0?"ORDER ON WHATSAPP":"ORDER ON REQUEST"}</a></div>`;
+ let selected=p.variants.find(v=>v.stock>0)||p.variants[0];
+ const draw=()=>{const available=p.variants.filter(v=>v.stock>0);el.innerHTML=`<div class="detail-media"><img id="mainProductImage" src="${selected.image||p.image}" alt="${p.name}"></div><div class="detail-copy"><span class="eyebrow">${p.category}</span><h1>${p.name}</h1><h2>Rs. ${Number(p.price).toLocaleString()}</h2><p>${p.description||""}</p><div class="meta"><span>Size: ${p.size}</span><span>Condition: ${p.condition}</span></div><h3>COLOUR</h3><div class="variants">${p.variants.map((v,i)=>`<button class="variant ${v.name===selected.name?"selected":""} ${v.stock<=0?"disabled":""}" data-i="${i}">${v.name}<small>${v.stock>0?v.stock+" CTN":"OUT OF STOCK"}</small></button>`).join("")}</div><a class="btn gold order-btn ${selected.stock<=0?"request":""}" id="orderBtn" href="${waLink(p,selected,selected.stock<=0)}" target="_blank">${selected.stock>0?"ORDER ON WHATSAPP":"ORDER ON REQUEST"}</a></div>`;
  el.querySelectorAll(".variant").forEach(b=>b.onclick=()=>{const v=p.variants[Number(b.dataset.i)];selected=v;draw();});};
  draw();
 }

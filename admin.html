@@ -7,9 +7,12 @@
 <main class="admin-wrap">
 <section id="loginBox" class="panel login-panel"><h1>Admin Login</h1><p>Production login will use the separate AEROFLEX Supabase project.</p><input id="adminEmail" type="email" placeholder="Admin email"><input id="adminPassword" type="password" placeholder="Password"><button class="gold-btn" id="loginBtn">LOGIN</button><small id="loginMsg"></small></section>
 <section id="dashboard" hidden>
-<div class="admin-head"><div><span class="eyebrow">AEROFLEX</span><h1>Stock Dashboard</h1></div><div class="head-actions"><button id="addBtn">+ ADD ARTICLE</button><button id="printBtn">🖨 PRINT AVAILABLE STOCK</button><button id="pdfBtn">📄 DOWNLOAD PDF</button></div></div>
+<div class="admin-head"><div><span class="eyebrow">AEROFLEX</span><h1>Stock Dashboard</h1></div><div class="head-actions"><button id="addBtn">+ ADD ARTICLE</button><button id="transferBtn">↗ ITEM TRANSFER</button><button id="printBtn">🖨 PRINT AVAILABLE STOCK</button><button id="pdfBtn">📄 DOWNLOAD PDF</button></div></div>
 <div class="stats"><div><b id="totalArticles">0</b><span>Total Articles</span></div><div><b id="availableArticles">0</b><span>Available Articles</span></div><div><b id="outArticles">0</b><span>Out of Stock</span></div><div><b id="totalCtn">0</b><span>Total CTN</span></div></div>
-<section class="panel"><div class="table-wrap"><table><thead><tr><th>Picture</th><th>Article</th><th>Category</th><th>Price</th><th>Colours / CTN</th><th>Actions</th></tr></thead><tbody id="adminRows"></tbody></table></div></section>
+<div class="admin-columns">
+<section class="panel"><div class="section-label">ALL ITEMS</div><p class="section-note">Catalogue items. Colours and pictures are shown here. Stock stays linked to this item and is managed through ITEM TRANSFER.</p><div class="table-wrap"><table><thead><tr><th>Picture</th><th>Article</th><th>Category</th><th>Colours</th><th>Actions</th></tr></thead><tbody id="allItemRows"></tbody></table></div></section>
+<section class="panel"><div class="section-label">AVAILABLE STOCK</div><p class="section-note">Only stock currently available. CTN is shown by colour.</p><div class="table-wrap"><table><thead><tr><th>Picture</th><th>Article</th><th>Colours / CTN</th></tr></thead><tbody id="stockRows"></tbody></table></div></section>
+</div>
 </section>
 </main>
 
@@ -21,10 +24,12 @@
 <div class="two"><label>Size<input id="size" value="Standard"></label><label>Condition<input id="condition" value="10/10"></label></div>
 <label>Description<textarea id="description" rows="3"></textarea></label>
 <label>Main / first picture<input id="mainImage" type="file" accept="image/*"></label>
-<div id="variantList"></div>
+<div><div class="section-note">COLOURS &amp; PICTURES (CTN is added only through ITEM TRANSFER)</div><div id="variantList"></div></div>
 <button type="button" id="addVariant" class="secondary">+ ADD COLOUR</button>
 <div class="form-actions"><button type="button" id="cancelForm">CANCEL</button><button class="gold-btn" type="submit">SAVE ARTICLE</button></div>
 </form></div></div>
+
+<div class="modal" id="transferModal" hidden><div class="modal-card transfer-card"><div class="modal-head"><h2>ITEM TRANSFER</h2><button id="closeTransfer">×</button></div><p class="section-note">Select any All Items article and colour, then enter how many CTN to add to Available Stock. The item remains in ALL ITEMS; only its stock balance increases.</p><form id="transferForm"><label>Item<select id="transferItem" required></select></label><label>Colour<select id="transferColour" required></select></label><label>Quantity to add (CTN)<input id="transferQty" type="number" min="1" step="1" placeholder="e.g. 10" required></label><div class="transfer-preview" id="transferPreview"></div><div class="form-actions"><button type="button" id="cancelTransfer">CANCEL</button><button class="gold-btn" type="submit">SHIFT TO AVAILABLE STOCK</button></div></form></div></div>
 
 <section id="printArea" class="print-area" hidden><div class="print-title"><img src="assets/aeroflex-logo.png"><h1>AVAILABLE STOCK</h1><p id="printDate"></p></div><div id="printContent"></div></section>
 
