@@ -1,17 +1,17 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AEROFLEX — All Items</title><link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-<header class="site-header"><a class="brand" href="index.html"><img src="assets/aeroflex-logo.png" alt="AEROFLEX"></a><nav><a href="index.html">HOME</a><a class="active" href="shop.html">ALL ITEMS</a><a href="available-stock.html">AVAILABLE STOCK</a><a href="index.html#about">ABOUT</a><a id="headerWa" href="#" target="_blank">WHATSAPP</a></nav></header>
+<header class="site-header"><a class="brand" href="home.html"><img src="assets/aeroflex-logo.png" alt="AEROFLEX"></a><nav><a href="home.html">HOME</a><a class="active" href="shop.html">ALL ITEMS</a><a href="available-stock.html">AVAILABLE STOCK</a><a href="home.html#about">ABOUT</a><a id="headerWa" href="#" target="_blank">WHATSAPP</a></nav></header>
 <main class="shop-page">
 <section class="section shop-top"><span class="eyebrow">CATALOGUE</span><h1>ALL ITEMS</h1><p>All AEROFLEX articles, including items currently out of stock.</p>
 <div class="public-modes"><a class="mode-btn active" href="shop.html">ALL ITEMS</a><a class="mode-btn " href="available-stock.html">AVAILABLE STOCK</a></div><div class="public-categories"><a href="shop.html?category=AEROFLEX">AEROFLEX</a><a href="shop.html?category=LOOK%20LASTER">LOOK LASTER</a><a href="shop.html?category=LS">LS</a><a href="shop.html?category=CAMLO">CAMLO</a></div><div class="shop-controls"><input id="search" placeholder="Search article..."><select id="category"><option value="">All categories</option><option>AEROFLEX</option><option>LOOK LASTER</option><option>LS</option><option>CAMLO</option></select><select id="sort"><option value="az">A–Z</option><option value="za">Z–A</option><option value="low">Price: Low to High</option><option value="high">Price: High to Low</option></select></div></section>
 <section class="section"><div id="productGrid" class="product-grid"></div></section>
 </main>
 <footer><img src="assets/aeroflex-logo.png" alt="AEROFLEX"><small>© <span id="year"></span> AEROFLEX</small></footer>
-<script src="js/config.js"></script><script src="js/app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="js/config.js?v=finalfix1"></script><script src="js/app.js?v=finalfix1"></script>
 <script>window.addEventListener('DOMContentLoaded',()=>AEROFLEX.renderShop({mode:'all'}));</script>
 </body></html>

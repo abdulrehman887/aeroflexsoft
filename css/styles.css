@@ -5,3 +5,5 @@
 @media print{body{background:#fff;color:#111}.site-header,footer{display:none!important}}
 .public-modes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:24px 0 14px}.mode-btn{display:flex;justify-content:center;align-items:center;min-height:58px;border:1px solid var(--gold);border-radius:10px;background:#0b2036;color:var(--gold2);font-weight:900;letter-spacing:.08em;font-size:15px}.mode-btn.active,.mode-btn:hover{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#111}.public-categories{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px}.public-categories a{padding:13px 10px;text-align:center;border:1px solid var(--line);border-radius:9px;background:#0a1d31;color:#f4f6f8;font-weight:800;font-size:12px;letter-spacing:.05em}.public-categories a:hover{border-color:var(--gold);color:var(--gold2)}
 @media(max-width:600px){.public-modes{gap:9px}.mode-btn{min-height:52px;font-size:13px}.public-categories{grid-template-columns:repeat(2,1fr)}}
+
+.ctn-pill{color:var(--gold2)!important;font-weight:800}.product-info small.ctn-pill{font-size:12px}
