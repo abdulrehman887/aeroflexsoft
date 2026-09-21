@@ -19,18 +19,24 @@
     }
     try{return normalize(JSON.parse(localStorage.getItem('aeroflex_products')||'[]'));}catch(e){return [];}
   }
-  async function saveProducts(ps){
+  async function saveProduct(p){
     const c=getClient();
-    if(!c){localStorage.setItem('aeroflex_products',JSON.stringify(normalize(ps)));return {error:null};}
-    for(const p of ps){
-      const payload={id:p.id,name:p.name,price:Number(p.price||0),category:p.category,size:p.size||'Standard',condition:p.condition||'10/10',description:p.description||'',image:p.image||''};
-      const up=await c.from('products').upsert(payload,{onConflict:'id'}); if(up.error) return up;
-      const del=await c.from('product_variants').delete().eq('product_id',p.id); if(del.error)return del;
-      if((p.variants||[]).length){
-        const vr=p.variants.map(v=>({id:v.id,product_id:p.id,name:v.name,image:v.image||'',stock:Number(v.stock||0),opening_stock:Number(v.openingStock??0)}));
-        const ins=await c.from('product_variants').insert(vr); if(ins.error)return ins;
-      }
+    if(!c){
+      const ps=normalize(JSON.parse(localStorage.getItem('aeroflex_products')||'[]'));
+      const i=ps.findIndex(x=>String(x.id)===String(p.id));
+      if(i>=0) ps[i]=normalize([p])[0]; else ps.push(normalize([p])[0]);
+      localStorage.setItem('aeroflex_products',JSON.stringify(ps));
+      return {error:null};
     }
+    const payload={id:p.id,name:p.name,price:Number(p.price||0),category:p.category,size:p.size||'Standard',condition:p.condition||'10/10',description:p.description||'',image:p.image||''};
+    const up=await c.from('products').upsert(payload,{onConflict:'id'}); if(up.error)return up;
+    const del=await c.from('product_variants').delete().eq('product_id',p.id); if(del.error)return del;
+    const variants=(p.variants||[]).map(v=>({id:v.id,product_id:p.id,name:v.name,image:v.image||'',stock:Number(v.stock||0),opening_stock:Number(v.openingStock??0)}));
+    if(variants.length){const ins=await c.from('product_variants').insert(variants); if(ins.error)return ins;}
+    return {error:null};
+  }
+  async function saveProducts(ps){
+    for(const p of ps){const r=await saveProduct(p);if(r?.error)return r;}
     return {error:null};
   }
   async function deleteProduct(id){const c=getClient();if(c){const d=await c.from('product_variants').delete().eq('product_id',id);if(d.error)return d;const p=await c.from('products').delete().eq('id',id);return p;}try{let ps=JSON.parse(localStorage.getItem('aeroflex_products')||'[]');localStorage.setItem('aeroflex_products',JSON.stringify(ps.filter(p=>p.id!==id)));return {error:null};}catch(e){return {error:e};}}
@@ -45,5 +51,5 @@
   async function renderShop({mode}){const grid=document.getElementById('productGrid'),search=document.getElementById('search'),category=document.getElementById('category'),sort=document.getElementById('sort');const params=new URLSearchParams(location.search);if(params.get('category'))category.value=params.get('category');async function go(){let ps=await getProducts();const q=(search.value||'').toLowerCase();ps=ps.filter(p=>(!q||p.name.toLowerCase().includes(q))&&(!category.value||p.category===category.value));if(mode==='available')ps=ps.filter(p=>p.variants.some(v=>v.stock>0));ps.sort((a,b)=>sort.value==='za'?b.name.localeCompare(a.name):sort.value==='low'?a.price-b.price:sort.value==='high'?b.price-a.price:a.name.localeCompare(b.name));grid.innerHTML=ps.map(p=>productCard(p,mode)).join('')||'<div class="empty">No articles found.</div>';}[search,category,sort].forEach(x=>x.addEventListener('input',go));await go();}
   async function renderProduct(){const id=new URLSearchParams(location.search).get('id'),mode=new URLSearchParams(location.search).get('mode')||'all',p=(await getProducts()).find(x=>String(x.id)===String(id)),el=document.getElementById('productDetail');if(!p){el.innerHTML='<h1>Product not found</h1>';return;}let selected=(mode==='available'?p.variants.find(v=>v.stock>0):p.variants[0])||null;const draw=()=>{const vars=mode==='available'?p.variants.filter(v=>v.stock>0):p.variants;el.innerHTML=`<div class="detail-media"><img src="${selected?.image||p.image||'assets/aeroflex-logo.png'}" alt="${p.name}"></div><div class="detail-copy"><span class="eyebrow">${p.category}</span><h1>${p.name}</h1><h2>Rs. ${Number(p.price).toLocaleString()}</h2><p>${p.description||''}</p><div class="meta"><span>Size: ${p.size}</span><span>Condition: ${p.condition}</span></div>${vars.length?`<h3>COLOUR: <b>${selected?.name||'-'}</b></h3><div class="variants">${vars.map(v=>`<button class="variant ${v===selected?'selected':''}" data-id="${v.id}">${v.name}</button>`).join('')}</div>`:''}<a class="btn gold order-btn" href="${waLink(p,selected,mode==='all'&&(!selected||selected.stock<=0))}" target="_blank">${mode==='available'?'ORDER ON WHATSAPP':'ORDER ON WHATSAPP / REQUEST'}</a></div>`;el.querySelectorAll('.variant').forEach(b=>b.onclick=()=>{selected=p.variants.find(v=>String(v.id)===String(b.dataset.id))||selected;draw();});};draw();}
   async function setup(){document.querySelectorAll('#headerWa,#heroWa,#ctaWa').forEach(a=>a.href=waLink({name:'AEROFLEX'},null,true));const f=document.getElementById('featuredGrid');if(f){const ps=await getProducts();f.innerHTML=ps.map(p=>productCard(p,'all')).join('');}document.querySelectorAll('#year').forEach(x=>x.textContent=new Date().getFullYear());}
-  window.AEROFLEX={getProducts,saveProducts,deleteProduct,uploadImage,renderShop,renderProduct,waLink,getClient};document.addEventListener('DOMContentLoaded',setup);
+  window.AEROFLEX={getProducts,saveProduct,saveProducts,deleteProduct,uploadImage,renderShop,renderProduct,waLink,getClient};document.addEventListener('DOMContentLoaded',setup);
 })();
