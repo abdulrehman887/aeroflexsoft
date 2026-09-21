@@ -14,7 +14,7 @@
         const ids=rows.map(r=>r.id);
         let vars=[];
         if(ids.length){const q=await c.from('product_variants').select('*').in('product_id',ids); if(!q.error) vars=q.data||[];}
-        return normalize(rows.map(p=>({...p,variants:vars.filter(v=>String(v.product_id)===String(p.id)).map(v=>({id:v.id,name:v.name,image:v.image||'',stock:Number(v.stock||0),openingStock:Number(v.opening_stock??v.openingStock??0)}))})));
+        return normalize(rows.map(p=>({...p,variants:vars.filter(v=>String(v.product_id)===String(p.id)).map(v=>({id:v.id,name:v.name||v.colour_name||'',image:v.image||'',stock:Number(v.stock||0),openingStock:Number(v.opening_stock??v.openingStock??0)}))})));
       }
     }
     try{return normalize(JSON.parse(localStorage.getItem('aeroflex_products')||'[]'));}catch(e){return [];}
@@ -31,7 +31,7 @@
     const payload={id:p.id,name:p.name,price:Number(p.price||0),category:p.category,size:p.size||'Standard',condition:p.condition||'10/10',description:p.description||'',image:p.image||''};
     const up=await c.from('products').upsert(payload,{onConflict:'id'}); if(up.error)return up;
     const del=await c.from('product_variants').delete().eq('product_id',p.id); if(del.error)return del;
-    const variants=(p.variants||[]).map(v=>({id:v.id,product_id:p.id,name:v.name,image:v.image||'',stock:Number(v.stock||0),opening_stock:Number(v.openingStock??0)}));
+    const variants=(p.variants||[]).map(v=>({id:v.id,product_id:p.id,name:v.name||v.colour_name||'',colour_name:v.name||v.colour_name||'',image:v.image||'',stock:Number(v.stock||0),opening_stock:Number(v.openingStock??0)}));
     if(variants.length){const ins=await c.from('product_variants').insert(variants); if(ins.error)return ins;}
     return {error:null};
   }
