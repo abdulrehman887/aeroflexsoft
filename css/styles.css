@@ -26,3 +26,5 @@
 @media(max-width:600px){.public-modes{gap:9px}.mode-btn{min-height:52px;font-size:13px}.public-categories{grid-template-columns:repeat(2,1fr)}}
 
 .ctn-pill{color:var(--gold2)!important;font-weight:800}.product-info small.ctn-pill{font-size:12px}
+
+.product-back{padding:18px 6% 0}.product-back a{display:inline-block;color:var(--gold2);font-weight:800;font-size:12px;text-decoration:none;border:1px solid var(--line);padding:9px 12px;border-radius:8px}@media(max-width:600px){.product-back{padding:8px 12px 0}.product-back a{font-size:11px;padding:7px 10px}}
