@@ -1,14 +1,13 @@
-AEROFLEX FINAL UI/Stock Flow Update
+# AEROFLEX — Mobile + PDF Test Update
 
-Changes in this build:
-- ALL ITEMS article creation has no stock/CTN fields.
-- ADD ARTICLE TO STOCK opens the complete ALL ITEMS list; select an article and enter one stock quantity per colour.
-- Available Stock shows only colours with stock > 0.
-- ALL ITEMS public view does not show CTN/stock quantities.
-- Public shop has two large mode buttons and four category buttons.
-- Mobile product grid is 2 articles per row; no View All cutoff.
-- Existing article photos/colours are preserved during edits unless replaced.
-- Secure Supabase Auth login remains enabled.
-- AEROFLEX-only Supabase URL/publishable key and WhatsApp number are configured.
+This package keeps the existing AEROFLEX Supabase configuration and site structure.
 
-Note: product/stock persistence in this starter build remains browser localStorage; production multi-device CRUD/RLS/storage should be connected to the separate AEROFLEX Supabase database before treating this as a production data backend.
+Changes in this update:
+- Mobile product detail is compact so the product image, key details, colour choices and WhatsApp button fit into one phone view.
+- Description is hidden only on small screens to avoid the oversized detail screen.
+- DOWNLOAD PDF now creates and downloads `AEROFLEX-AVAILABLE-STOCK.pdf` instead of opening the browser print dialog.
+- PRINT AVAILABLE STOCK remains unchanged.
+- Added 8 bundled test article images and an admin button `LOAD 8 TEST ARTICLES` for testing.
+- Test articles use Rs. 0 and are clearly prefixed with `TEST —`; delete them after testing.
+
+Existing AEROFLEX Supabase URL/key and WhatsApp number are retained from the previous package.
